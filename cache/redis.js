@@ -1,69 +1,10 @@
 /* eslint-disable no-new-func */
-const redis = require('redis');
-const BaseCache = require('./base');
+const redis = require("redis");
+const serialize = require("serialize-javascript");
+const BaseCache = require("./base");
 
-// eslint-disable-next-line arrow-parens
-const serialize = (obj) => {
-  let o = obj;
-
-  if (Array.isArray(obj)) {
-    // eslint-disable-next-line arrow-parens
-    o = obj.map((v) => serialize(v));
-    // eslint-disable-next-line no-else-return
-  } else if (obj && typeof obj === 'object') {
-    const otemp = {};
-    // eslint-disable-next-line arrow-parens
-    Object.keys(obj).forEach((k) => {
-      if (typeof obj[k] === 'function') {
-        otemp.functionKeys = Array.isArray(otemp.functionKeys)
-          ? otemp.functionKeys.push(k)
-          : [k];
-        obj[k] = obj[k].toString();
-      } else if (obj[k] && typeof obj[k] === 'object') {
-        obj[k] = serialize(obj[k]);
-      } else if (Array.isArray(obj[k])) {
-        obj[k] = obj[k].map(v => serialize(v));
-      }
-    });
-    o = { ...obj, ...otemp };
-  }
-
-  return o;
-};
-
-// eslint-disable-next-line arrow-parens
-const deserialize = (obj) => {
-  const convert = (element, args) => {
-    const argsNames = args && Array.isArray(args) ? args : '';
-    // eslint-disable-next-line no-extra-boolean-cast
-    return !!argsNames
-      ? new Function(
-        ...argsNames,
-        `return (${element})(${argsNames.join(',')})`,
-      )
-      : new Function(`return (${element})()`);
-  };
-
-  let o = obj;
-
-  if (Array.isArray(obj)) {
-    // eslint-disable-next-line arrow-parens
-    o = obj.map((v) => deserialize(v));
-    // eslint-disable-next-line no-else-return
-  } else if (obj && typeof obj === 'object') {
-    // eslint-disable-next-line arrow-parens
-    (obj.functionKeys || []).forEach((k) => {
-      if (Array.isArray(obj[k])) {
-        obj[k] = obj[k].map(v => deserialize(v));
-      } else if (typeof obj[k] === 'string') {
-        obj[k] = convert(obj[k], obj[`${k}ArgsNames`]);
-      }
-    });
-
-    o = { ...obj };
-  }
-
-  return o;
+const deserialize = (serializedJavascript) => {
+  return eval("(" + serializedJavascript + ")");
 };
 
 /**
@@ -119,8 +60,7 @@ class RedisCache extends BaseCache {
           return;
         }
         try {
-          let value = JSON.parse(json || null);
-          value = deserialize(value);
+          const value = deserialize(json);
           resolve(value);
         } catch (_error) {
           reject(_error);
@@ -140,7 +80,6 @@ class RedisCache extends BaseCache {
       let json;
       try {
         json = serialize(value);
-        json = JSON.stringify(value);
       } catch (error) {
         reject(error);
         return;
@@ -182,7 +121,6 @@ class RedisCache extends BaseCache {
       let json;
       try {
         json = serialize(value);
-        json = JSON.stringify(value);
       } catch (error) {
         reject(error);
         return;
@@ -249,8 +187,7 @@ class RedisCache extends BaseCache {
 
         try {
           json = Array.isArray(json) && json.length === 2 ? json[1] : null;
-          let value = JSON.parse(json);
-          value = deserialize(value);
+          const value = deserialize(json);
           resolve(value);
         } catch (_err) {
           reject(_err);
