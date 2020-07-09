@@ -1,11 +1,10 @@
 /* eslint-disable no-new-func */
-const redis = require("redis");
-const serialize = require("serialize-javascript");
-const BaseCache = require("./base");
+const redis = require('redis');
+const serialize = require('serialize-javascript');
+const BaseCache = require('./base');
 
-const deserialize = (serializedJavascript) => {
-  return eval("(" + serializedJavascript + ")");
-};
+// eslint-disable-next-line no-eval
+const deserialize = serializedJavascript => eval(`(${serializedJavascript})`);
 
 /**
  * @implements {BaseCache}
