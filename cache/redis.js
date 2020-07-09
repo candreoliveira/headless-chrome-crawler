@@ -23,27 +23,14 @@ const serialize = (obj) => {
     // eslint-disable-next-line arrow-parens
     Object.keys(obj).forEach((k) => {
       if (typeof obj[k] === 'function') {
-        otemp.functionOptions = Array.isArray(otemp.functionOptions)
-          ? otemp.functionOptions.push(k)
+        otemp.functionKeys = Array.isArray(otemp.functionKeys)
+          ? otemp.functionKeys.push(k)
           : [k];
-
         obj[k] = obj[k].toString();
+      } else if (obj[k] && typeof obj[k] === 'object') {
+        obj[k] = serialize(obj[k]);
       } else if (Array.isArray(obj[k])) {
-        otemp.functionOptions = Array.isArray(otemp.functionOptions)
-          ? otemp.functionOptions.push(k)
-          : [k];
-
-        obj[k] = obj[k].map(v => {
-          let out = v;
-
-          if (Array.isArray(v)) {
-            out = v.map(x => serialize(x));
-          } else if (v && typeof v === 'object') {
-            out = serialize(v);
-          }
-
-          return out;
-        });
+        obj[k] = obj[k].map(v => serialize(v));
       }
     });
     o = { ...obj, ...otemp };
@@ -73,9 +60,9 @@ const deserialize = (obj) => {
     // eslint-disable-next-line no-else-return
   } else if (obj && typeof obj === 'object') {
     // eslint-disable-next-line arrow-parens
-    (obj.functionOptions || []).forEach((k) => {
+    (obj.functionKeys || []).forEach((k) => {
       if (Array.isArray(obj[k])) {
-        obj[k] = obj[k].map((v, i) => convert(v, (obj[`${k}ArgsNames`] || [])[i]));
+        obj[k] = obj[k].map(v => deserialize(v));
       } else if (typeof obj[k] === 'string') {
         obj[k] = convert(obj[k], obj[`${k}ArgsNames`]);
       }
