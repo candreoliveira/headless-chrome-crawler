@@ -1,6 +1,6 @@
 {
   "name": "node-headless-crawler",
-  "version": "1.9.6",
+  "version": "1.9.7",
   "description": "Distributed web crawler powered by Headless Chrome",
   "main": "index.js",
   "license": "MIT",
@@ -31,7 +31,8 @@
     "puppeteer": "1.19.0",
     "request": "2.87.0",
     "request-promise": "4.2.2",
-    "robots-parser": "1.0.2"
+    "robots-parser": "1.0.2",
+    "serialize-javascript": "^4.0.0"
   },
   "peerDependencies": {
     "redis": "2.8.0"
