@@ -19,16 +19,18 @@ const serialize = (obj) => {
     o = obj.map((v) => serialize(v));
     // eslint-disable-next-line no-else-return
   } else if (obj && typeof obj === 'object') {
+    const otemp = {};
     // eslint-disable-next-line arrow-parens
     Object.keys(obj).forEach((k) => {
       if (typeof obj[k] === 'function') {
-        obj.functionOptions = Array.isArray(obj.functionOptions)
-          ? obj.functionOptions.push(k)
+        otemp.functionOptions = Array.isArray(otemp.functionOptions)
+          ? otemp.functionOptions.push(k)
           : [k];
+
         obj[k] = obj[k].toString();
       } else if (Array.isArray(obj[k])) {
-        obj.functionOptions = Array.isArray(obj.functionOptions)
-          ? obj.functionOptions.push(k)
+        otemp.functionOptions = Array.isArray(otemp.functionOptions)
+          ? otemp.functionOptions.push(k)
           : [k];
 
         obj[k] = obj[k].map(v => {
@@ -44,7 +46,7 @@ const serialize = (obj) => {
         });
       }
     });
-    o = { ...obj };
+    o = { ...obj, ...otemp };
   }
 
   return o;
