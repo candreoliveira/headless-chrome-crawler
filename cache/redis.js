@@ -1,3 +1,4 @@
+/* eslint-disable no-new-func */
 const redis = require('redis');
 const BaseCache = require('./base');
 
@@ -8,6 +9,70 @@ if (queue) then\n
 end\n
 return queue\n
 `;
+
+// eslint-disable-next-line arrow-parens
+const serialize = (obj) => {
+  let o = obj;
+
+  if (Array.isArray(obj)) {
+    // eslint-disable-next-line arrow-parens
+    o = obj.map((v) => serialize(v));
+    // eslint-disable-next-line no-else-return
+  } else if (obj && typeof obj === 'object') {
+    // eslint-disable-next-line arrow-parens
+    Object.keys(obj).forEach((k) => {
+      if (typeof obj[k] === 'function') {
+        obj.functionOptions = Array.isArray(obj.functionOptions)
+          ? obj.functionOptions.push(k)
+          : [k];
+        obj[k] = obj[k].toString();
+      } else if (Array.isArray(obj[k])) {
+        obj.functionOptions = Array.isArray(obj.functionOptions)
+          ? obj.functionOptions.push(k)
+          : [k];
+        obj[k] = obj[k].map(v => v.toString());
+      }
+    });
+    o = { ...obj };
+  }
+
+  return o;
+};
+
+// eslint-disable-next-line arrow-parens
+const deserialize = (obj) => {
+  const convert = (element, args) => {
+    const argsNames = args && Array.isArray(args) ? args : '';
+    // eslint-disable-next-line no-extra-boolean-cast
+    return !!argsNames
+      ? new Function(
+        ...argsNames,
+        `return (${element})(${argsNames.join(',')})`,
+      )
+      : new Function(`return (${element})()`);
+  };
+
+  let o = obj;
+
+  if (Array.isArray(obj)) {
+    // eslint-disable-next-line arrow-parens
+    o = obj.map((v) => deserialize(v));
+    // eslint-disable-next-line no-else-return
+  } else if (obj && typeof obj === 'object') {
+    // eslint-disable-next-line arrow-parens
+    (obj.functionOptions || []).forEach((k) => {
+      if (Array.isArray(obj[k])) {
+        obj[k] = obj[k].map((v, i) => convert(v, (obj[`${k}ArgsNames`] || [])[i]));
+      } else if (typeof obj[k] === 'string') {
+        obj[k] = convert(obj[k], obj[`${k}ArgsNames`]);
+      }
+    });
+
+    o = { ...obj };
+  }
+
+  return o;
+};
 
 /**
  * @implements {BaseCache}
@@ -28,7 +93,8 @@ class RedisCache extends BaseCache {
    */
   clear() {
     return new Promise((resolve, reject) => {
-      this._client.flushdb(error => {
+      // eslint-disable-next-line arrow-parens
+      this._client.flushdb((error) => {
         if (error) {
           reject(error);
           return;
@@ -60,7 +126,8 @@ class RedisCache extends BaseCache {
           return;
         }
         try {
-          const value = JSON.parse(json || null);
+          let value = JSON.parse(json || null);
+          value = deserialize(value);
           resolve(value);
         } catch (_error) {
           reject(_error);
@@ -79,12 +146,14 @@ class RedisCache extends BaseCache {
     return new Promise((resolve, reject) => {
       let json;
       try {
+        json = serialize(value);
         json = JSON.stringify(value);
       } catch (error) {
         reject(error);
         return;
       }
-      this._client.set(key, json, error => {
+      // eslint-disable-next-line arrow-parens
+      this._client.set(key, json, (error) => {
         if (error) {
           reject(error);
           return;
@@ -93,7 +162,8 @@ class RedisCache extends BaseCache {
           resolve();
           return;
         }
-        this._client.expire(key, this._settings.expire, _error => {
+        // eslint-disable-next-line arrow-parens
+        this._client.expire(key, this._settings.expire, (_error) => {
           if (_error) {
             reject(_error);
             return;
@@ -115,12 +185,14 @@ class RedisCache extends BaseCache {
     return new Promise((resolve, reject) => {
       let json;
       try {
+        json = serialize(value);
         json = JSON.stringify(value);
       } catch (error) {
         reject(error);
         return;
       }
-      this._client.zadd(key, priority, json, error => {
+      // eslint-disable-next-line arrow-parens
+      this._client.zadd(key, priority, json, (error) => {
         if (error) {
           reject(error);
           return;
@@ -129,7 +201,8 @@ class RedisCache extends BaseCache {
           resolve();
           return;
         }
-        this._client.expire(key, this._settings.expire, _error => {
+        // eslint-disable-next-line arrow-parens
+        this._client.expire(key, this._settings.expire, (_error) => {
           if (_error) {
             reject(_error);
             return;
@@ -153,7 +226,8 @@ class RedisCache extends BaseCache {
           return;
         }
         try {
-          const value = JSON.parse(json || null);
+          let value = JSON.parse(json || null);
+          value = deserialize(value);
           resolve(value);
         } catch (_error) {
           reject(_error);
@@ -186,7 +260,8 @@ class RedisCache extends BaseCache {
    */
   remove(key) {
     return new Promise((resolve, reject) => {
-      this._client.del(key, error => {
+      // eslint-disable-next-line arrow-parens
+      this._client.del(key, (error) => {
         if (error) {
           reject(error);
           return;
