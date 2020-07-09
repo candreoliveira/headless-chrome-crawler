@@ -67,11 +67,16 @@ class Helper {
         expect(value).toEqual({ url: 'http://example.com' });
       });
 
-      test('obeys priority order', async () => {
+      test('obeys queue length', async () => {
         await testContext.cache.enqueue(KEY, 'http://example.com/', 0);
         await testContext.cache.enqueue(KEY, 'http://example.net/', 1);
         const length1 = await testContext.cache.size(KEY);
         expect(length1).toBe(2);
+      });
+
+      test('obeys priority order', async () => {
+        await testContext.cache.enqueue(KEY, 'http://example.com/', 0);
+        await testContext.cache.enqueue(KEY, 'http://example.net/', 1);
         const value1 = await testContext.cache.dequeue(KEY);
         expect(value1).toBe('http://example.net/');
         const value2 = await testContext.cache.dequeue(KEY);
@@ -105,10 +110,10 @@ class Helper {
         expect(value).toBeNull();
       });
 
-      test('removes enqueued value', async () => {
-        await testContext.cache.enqueue(KEY, 'http://example.com/');
+      test('removes key', async () => {
+        await testContext.cache.set(KEY, 'http://example.com/');
         await testContext.cache.remove(KEY);
-        const value = await testContext.cache.dequeue(KEY);
+        const value = await testContext.cache.get(KEY);
         expect(value).toBeNull();
       });
     });

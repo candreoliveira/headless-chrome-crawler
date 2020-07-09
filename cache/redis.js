@@ -2,14 +2,6 @@
 const redis = require('redis');
 const BaseCache = require('./base');
 
-const DEQUEUE_SCRIPT = `
-local queue = redis.call('ZREVRANGE', KEYS[1], 0, 0)[1]\n
-if (queue) then\n
-  redis.call('ZREM', KEYS[1], queue)\n
-end\n
-return queue\n
-`;
-
 // eslint-disable-next-line arrow-parens
 const serialize = (obj) => {
   let o = obj;
@@ -84,6 +76,7 @@ class RedisCache extends BaseCache {
    */
   init() {
     this._client = redis.createClient(this._settings);
+    this._maxPriority = 0;
     return Promise.resolve();
   }
 
@@ -181,8 +174,11 @@ class RedisCache extends BaseCache {
    * @return {!Promise}
    * @override
    */
-  enqueue(key, value, priority = 1) {
+  enqueue(key, value, priority = 0) {
+    if (this._maxPriority < priority) this._maxPriority = priority;
+
     return new Promise((resolve, reject) => {
+      const newKey = `${key}:${priority}`;
       let json;
       try {
         json = serialize(value);
@@ -192,24 +188,43 @@ class RedisCache extends BaseCache {
         return;
       }
       // eslint-disable-next-line arrow-parens
-      this._client.zadd(key, priority, json, (error) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        if (!this._settings.expire) {
-          resolve();
-          return;
-        }
+      if (this._settings.expire) {
+        const m = this._client.multi();
+
         // eslint-disable-next-line arrow-parens
-        this._client.expire(key, this._settings.expire, (_error) => {
-          if (_error) {
-            reject(_error);
+        m.rpush(newKey, json, (err) => {
+          if (err) {
+            reject(err);
+          }
+        });
+
+        // eslint-disable-next-line arrow-parens
+        m.expire(newKey, this._settings.expire, (err) => {
+          if (err) {
+            reject(err);
+          }
+        });
+
+        // eslint-disable-next-line arrow-parens
+        m.exec((err) => {
+          if (err) {
+            reject(err);
             return;
           }
+
           resolve();
         });
-      });
+      } else {
+        // eslint-disable-next-line arrow-parens
+        this._client.rpush(newKey, json, (err) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+
+          resolve();
+        });
+      }
     });
   }
 
@@ -220,17 +235,25 @@ class RedisCache extends BaseCache {
    */
   dequeue(key) {
     return new Promise((resolve, reject) => {
-      this._client.eval(DEQUEUE_SCRIPT, 1, key, (error, json) => {
-        if (error) {
-          reject(error);
+      const keys = [];
+      // eslint-disable-next-line no-plusplus
+      for (let i = this._maxPriority; i >= 0; i--) {
+        keys.push(`${key}:${i}`);
+      }
+
+      this._client.blpop(...keys, 0.005, (err, json) => {
+        if (err) {
+          reject(err);
           return;
         }
+
         try {
-          let value = JSON.parse(json || null);
+          json = Array.isArray(json) && json.length === 2 ? json[1] : null;
+          let value = JSON.parse(json);
           value = deserialize(value);
           resolve(value);
-        } catch (_error) {
-          reject(_error);
+        } catch (_err) {
+          reject(_err);
         }
       });
     });
@@ -243,12 +266,25 @@ class RedisCache extends BaseCache {
    */
   size(key) {
     return new Promise((resolve, reject) => {
-      this._client.zcount(key, '-inf', 'inf', (error, size) => {
-        if (error) {
-          reject(error);
+      const m = this._client.multi();
+
+      // eslint-disable-next-line no-plusplus
+      for (let i = this._maxPriority; i >= 0; i--) {
+        // eslint-disable-next-line arrow-parens
+        m.llen(`${key}:${i}`, (err) => {
+          if (err) {
+            reject(err);
+          }
+        });
+      }
+
+      m.exec((err, results) => {
+        if (err) {
+          reject(err);
           return;
         }
-        resolve(size || 0);
+
+        resolve(results.reduce((acc, curr) => acc + curr, 0));
       });
     });
   }

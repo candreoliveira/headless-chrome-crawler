@@ -35,7 +35,7 @@
     "serialize-javascript": "^4.0.0"
   },
   "peerDependencies": {
-    "redis": "2.8.0"
+    "redis": "3.0.2"
   },
   "devDependencies": {
     "@commitlint/cli": "7.0.0",
@@ -52,7 +52,7 @@
     "husky": "0.14.3",
     "jest": "23.1.0",
     "mime": "2.3.0",
-    "redis": "2.8.0",
+    "redis": "^3.0.2",
     "typescript": "2.7.2"
   },
   "keywords": [
