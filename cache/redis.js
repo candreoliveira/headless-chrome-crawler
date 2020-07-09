@@ -30,7 +30,18 @@ const serialize = (obj) => {
         obj.functionOptions = Array.isArray(obj.functionOptions)
           ? obj.functionOptions.push(k)
           : [k];
-        obj[k] = obj[k].map(v => v.toString());
+
+        obj[k] = obj[k].map(v => {
+          let out = v;
+
+          if (Array.isArray(v)) {
+            out = v.map(x => serialize(x));
+          } else if (v && typeof v === 'object') {
+            out = serialize(v);
+          }
+
+          return out;
+        });
       }
     });
     o = { ...obj };
