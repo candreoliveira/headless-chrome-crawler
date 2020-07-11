@@ -1,6 +1,6 @@
 {
   "name": "node-headless-crawler",
-  "version": "1.9.9",
+  "version": "1.9.10",
   "description": "Distributed web crawler powered by Headless Chrome",
   "main": "index.js",
   "license": "MIT",
@@ -12,6 +12,7 @@
     "lint": "eslint --quiet -f codeframe . || eslint .",
     "jest-exclude-redis-cache": "yarn jest $(find test -name '*.test.js' -not -name 'redis.test.js')",
     "jest": "jest --maxWorkers=1",
+    "jestDebug": "node --inspect-brk node_modules/.bin/jest --maxWorkers=1 --testTimeout=300000",
     "test": "yarn tsc && yarn lint && yarn jest-exclude-redis-cache",
     "test-all": "yarn tsc && yarn lint && yarn jest",
     "tsc": "tsc -p ."

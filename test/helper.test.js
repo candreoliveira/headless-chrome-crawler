@@ -20,14 +20,18 @@ describe('Helper', () => {
   describe('Helper.delay', () => {
     test('should wait until shorter delay', async () => {
       let waited = false;
-      delay(50).then(() => { waited = true; });
+      delay(50).then(() => {
+        waited = true;
+      });
       await delay(100);
       expect(waited).toBe(true);
     });
 
     test('should not wait until longer delay', async () => {
       let waited = false;
-      delay(100).then(() => { waited = true; });
+      delay(100).then(() => {
+        waited = true;
+      });
       await delay(50);
       expect(waited).toBe(false);
     });
@@ -75,7 +79,10 @@ describe('Helper', () => {
     });
 
     test('returns null when the argument starts with javascript:', () => {
-      const actual = resolveUrl('javascript:void(0)', baseUrl); /* eslint no-script-url: 0 */
+      const actual = resolveUrl(
+        'javascript:void(0)',
+        baseUrl,
+      ); /* eslint no-script-url: 0 */
       const expected = null;
       expect(actual).toBe(expected);
     });
@@ -87,13 +94,19 @@ describe('Helper', () => {
     });
 
     test('returns full URL when the argument is an absolute URL', () => {
-      const actual = resolveUrl('https://github.com/yujiosaka/headless-chrome-crawler', baseUrl);
+      const actual = resolveUrl(
+        'https://github.com/yujiosaka/headless-chrome-crawler',
+        baseUrl,
+      );
       const expected = 'https://github.com/yujiosaka/headless-chrome-crawler';
       expect(actual).toBe(expected);
     });
 
     test('strips hash when the argument is an absolute URL with hash', () => {
-      const actual = resolveUrl('https://github.com/yujiosaka/headless-chrome-crawler#headless-chrome-crawler---', baseUrl);
+      const actual = resolveUrl(
+        'https://github.com/yujiosaka/headless-chrome-crawler#headless-chrome-crawler---',
+        baseUrl,
+      );
       const expected = 'https://github.com/yujiosaka/headless-chrome-crawler';
       expect(actual).toBe(expected);
     });
@@ -114,7 +127,9 @@ describe('Helper', () => {
       });
 
       test('escapes value when commas are found', () => {
-        const actual = escapeQuotes('Headless Chrome crawls with jQuery support, powered by Puppeteer');
+        const actual = escapeQuotes(
+          'Headless Chrome crawls with jQuery support, powered by Puppeteer',
+        );
         const expected = '"Headless Chrome crawls with jQuery support, powered by Puppeteer"';
         expect(actual).toBe(expected);
       });
@@ -134,13 +149,19 @@ describe('Helper', () => {
 
     describe('when separator is a tab', () => {
       test('does not escape value when no quote, tab or break is found', () => {
-        const actual = escapeQuotes('Headless Chrome crawls with jQuery support, powered by Puppeteer', '\t');
+        const actual = escapeQuotes(
+          'Headless Chrome crawls with jQuery support, powered by Puppeteer',
+          '\t',
+        );
         const expected = 'Headless Chrome crawls with jQuery support, powered by Puppeteer';
         expect(actual).toBe(expected);
       });
 
       test('escapes value when tabs are found', () => {
-        const actual = escapeQuotes('Headless Chrome crawls with jQuery support\tpowered by Puppeteer', '\t');
+        const actual = escapeQuotes(
+          'Headless Chrome crawls with jQuery support\tpowered by Puppeteer',
+          '\t',
+        );
         const expected = '"Headless Chrome crawls with jQuery support\tpowered by Puppeteer"';
         expect(actual).toBe(expected);
       });
@@ -175,11 +196,7 @@ describe('Helper', () => {
 
   describe('Helper.lowerBound', () => {
     test('returns the first index for positive values', () => {
-      const queue = [
-        { priority: 4 },
-        { priority: 3 },
-        { priority: 1 },
-      ];
+      const queue = [{ priority: 4 }, { priority: 3 }, { priority: 1 }];
       const item = { priority: 2 };
       const actual = lowerBound(queue, item, (a, b) => b.priority - a.priority);
       const expected = 2;
@@ -187,11 +204,7 @@ describe('Helper', () => {
     });
 
     test('returns the first index for negative values', () => {
-      const queue = [
-        { priority: -1 },
-        { priority: -2 },
-        { priority: -4 },
-      ];
+      const queue = [{ priority: -1 }, { priority: -2 }, { priority: -4 }];
       const item = { priority: -3 };
       const actual = lowerBound(queue, item, (a, b) => b.priority - a.priority);
       const expected = 2;
@@ -199,11 +212,7 @@ describe('Helper', () => {
     });
 
     test('returns the first index for mixed values', () => {
-      const queue = [
-        { priority: 1 },
-        { priority: 0 },
-        { priority: -2 },
-      ];
+      const queue = [{ priority: 1 }, { priority: 0 }, { priority: -2 }];
       const item = { priority: -1 };
       const actual = lowerBound(queue, item, (a, b) => b.priority - a.priority);
       const expected = 2;
@@ -241,7 +250,10 @@ describe('Helper', () => {
     });
 
     test('returns false when no domain matches requested hostname by regular expression', () => {
-      const actual = checkDomainMatch([/^localhost$/, /^\d\.\d\.\d\.\d$/], '127.0.0.1');
+      const actual = checkDomainMatch(
+        [/^localhost$/, /^\d\.\d\.\d\.\d$/],
+        '127.0.0.1',
+      );
       const expected = false;
       expect(actual).toBe(expected);
     });
@@ -253,7 +265,10 @@ describe('Helper', () => {
     });
 
     test('returns true when a domain fully matches requested hostname by regular expression', () => {
-      const actual = checkDomainMatch([/^localhost$/, /^\d+\.\d+\.\d+\.\d+$/], '127.0.0.1');
+      const actual = checkDomainMatch(
+        [/^localhost$/, /^\d+\.\d+\.\d+\.\d+$/],
+        '127.0.0.1',
+      );
       const expected = true;
       expect(actual).toBe(expected);
     });
@@ -281,7 +296,9 @@ describe('Helper', () => {
         <url><loc>https://github.com/yujiosaka/headless-chrome-crawler/issues</loc></url>
       </urlset>
       `);
-      const expected = ['https://github.com/yujiosaka/headless-chrome-crawler/issues'];
+      const expected = [
+        'https://github.com/yujiosaka/headless-chrome-crawler/issues',
+      ];
       expect(actual).toEqual(expected);
     });
   });
@@ -294,13 +311,17 @@ describe('Helper', () => {
     });
 
     test('returns the same string for non-escaped argument', () => {
-      const actual = unescape('https://github.com/yujiosaka/headless-chrome-crawler/issues');
+      const actual = unescape(
+        'https://github.com/yujiosaka/headless-chrome-crawler/issues',
+      );
       const expected = 'https://github.com/yujiosaka/headless-chrome-crawler/issues';
       expect(actual).toBe(expected);
     });
 
     test('returns the unescaped argument', () => {
-      const actual = unescape('&lt;loc&gt;https://github.com/yujiosaka/headless-chrome-crawler/issues?a=1&amp;b=2&lt;/loc&gt;');
+      const actual = unescape(
+        '&lt;loc&gt;https://github.com/yujiosaka/headless-chrome-crawler/issues?a=1&amp;b=2&lt;/loc&gt;',
+      );
       const expected = '<loc>https://github.com/yujiosaka/headless-chrome-crawler/issues?a=1&b=2</loc>';
       expect(actual).toBe(expected);
     });
@@ -326,7 +347,9 @@ describe('Helper', () => {
     });
 
     test('stringifies string', () => {
-      const actual = stringifyArgument('https://github.com/yujiosaka/headless-chrome-crawler');
+      const actual = stringifyArgument(
+        'https://github.com/yujiosaka/headless-chrome-crawler',
+      );
       const expected = "'https://github.com/yujiosaka/headless-chrome-crawler'";
       expect(actual).toBe(expected);
     });
@@ -359,7 +382,9 @@ describe('Helper', () => {
   describe('Helper.debugConsole', () => {
     test('does not throw an error', () => {
       expect(() => {
-        debugConsole('log init at https://github.com/yujiosaka/headless-chrome-crawler');
+        debugConsole(
+          'log init at https://github.com/yujiosaka/headless-chrome-crawler',
+        );
       }).not.toThrow();
     });
   });
@@ -367,7 +392,9 @@ describe('Helper', () => {
   describe('Helper.debugDialog', () => {
     test('does not throw an error', () => {
       expect(() => {
-        debugDialog('beforeUnload This page is asking you to confirm that you want to leave - data you have entered may not be saved. at https://github.com/yujiosaka/headless-chrome-crawler');
+        debugDialog(
+          'beforeUnload This page is asking you to confirm that you want to leave - data you have entered may not be saved. at https://github.com/yujiosaka/headless-chrome-crawler',
+        );
       }).not.toThrow();
     });
   });

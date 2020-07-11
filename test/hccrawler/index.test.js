@@ -65,9 +65,12 @@ describe('HCCrawler', () => {
     });
 
     describe('when the server is running', () => {
-      function evaluatePage() {
-        return $('body').text();
-      }
+      const evaluatePage = [
+        {
+          function: () => $('body').text(),
+          functionArgs: [],
+        },
+      ];
 
       beforeAll(async () => {
         this.server = await Server.run(PORT);
@@ -82,17 +85,24 @@ describe('HCCrawler', () => {
       test('emits a disconnect event', async () => {
         this.crawler = await HCCrawler.launch(DEFAULT_OPTIONS);
         let disconnected = 0;
-        this.crawler.on('disconnected', () => { disconnected += 1; });
+        this.crawler.on('disconnected', () => {
+          disconnected += 1;
+        });
         await this.crawler.close();
         expect(disconnected).toBe(1);
       });
 
       describe('when the crawler is launched with necessary options', () => {
         beforeEach(async () => {
-          this.crawler = await HCCrawler.launch(extend({
-            evaluatePage,
-            onSuccess: this.onSuccess,
-          }, DEFAULT_OPTIONS));
+          this.crawler = await HCCrawler.launch(
+            extend(
+              {
+                evaluatePage,
+                onSuccess: this.onSuccess,
+              },
+              DEFAULT_OPTIONS,
+            ),
+          );
         });
 
         test('shows the browser version', async () => {
@@ -128,8 +138,12 @@ describe('HCCrawler', () => {
         test('crawls when queueing necessary options', async () => {
           let requeststarted = 0;
           let requestfinished = 0;
-          this.crawler.on('requeststarted', () => { requeststarted += 1; });
-          this.crawler.on('requestfinished', () => { requestfinished += 1; });
+          this.crawler.on('requeststarted', () => {
+            requeststarted += 1;
+          });
+          this.crawler.on('requestfinished', () => {
+            requestfinished += 1;
+          });
           await this.crawler.queue(INDEX_PAGE);
           await this.crawler.onIdle();
           expect(requeststarted).toBe(1);
@@ -150,7 +164,11 @@ describe('HCCrawler', () => {
         });
 
         test('crawls when queueing multiple strings', async () => {
-          await this.crawler.queue([`${PREFIX}/1.html`, `${PREFIX}/2.html`, `${PREFIX}/3.html`]);
+          await this.crawler.queue([
+            `${PREFIX}/1.html`,
+            `${PREFIX}/2.html`,
+            `${PREFIX}/3.html`,
+          ]);
           await this.crawler.onIdle();
           expect(this.onSuccess).toHaveBeenCalledTimes(3);
         });
@@ -162,13 +180,19 @@ describe('HCCrawler', () => {
         });
 
         test('crawls when queueing multiple objects', async () => {
-          await this.crawler.queue([{ url: `${PREFIX}/1.html` }, { url: `${PREFIX}/2.html` }]);
+          await this.crawler.queue([
+            { url: `${PREFIX}/1.html` },
+            { url: `${PREFIX}/2.html` },
+          ]);
           await this.crawler.onIdle();
           expect(this.onSuccess).toHaveBeenCalledTimes(2);
         });
 
         test('crawls when queueing mixed styles', async () => {
-          await this.crawler.queue([`${PREFIX}/1.html`, { url: `${PREFIX}/2.html` }]);
+          await this.crawler.queue([
+            `${PREFIX}/1.html`,
+            { url: `${PREFIX}/2.html` },
+          ]);
           await this.crawler.queue(`${PREFIX}/3.html`);
           await this.crawler.onIdle();
           expect(this.onSuccess).toHaveBeenCalledTimes(3);
@@ -184,7 +208,10 @@ describe('HCCrawler', () => {
 
         test('throws an error when queueing options with an unavailable device', async () => {
           try {
-            await this.crawler.queue({ url: INDEX_PAGE, device: 'do-not-exist' });
+            await this.crawler.queue({
+              url: INDEX_PAGE,
+              device: 'do-not-exist',
+            });
           } catch (error) {
             expect(error.message).toBe('Specified device is not supported!');
           }
@@ -194,14 +221,21 @@ describe('HCCrawler', () => {
           try {
             await this.crawler.queue({ url: INDEX_PAGE, delay: 100 });
           } catch (error) {
-            expect(error.message).toBe('Max concurrency must be 1 when delay is set!');
+            expect(error.message).toBe(
+              'Max concurrency must be 1 when delay is set!',
+            );
           }
         });
 
         test('crawls when the requested domain exactly matches allowed domains', async () => {
           let requestskipped = 0;
-          this.crawler.on('requestskipped', () => { requestskipped += 1; });
-          await this.crawler.queue({ url: INDEX_PAGE, allowedDomains: ['127.0.0.1'] });
+          this.crawler.on('requestskipped', () => {
+            requestskipped += 1;
+          });
+          await this.crawler.queue({
+            url: INDEX_PAGE,
+            allowedDomains: ['127.0.0.1'],
+          });
           await this.crawler.onIdle();
           expect(requestskipped).toBe(0);
           expect(this.onSuccess).toHaveBeenCalledTimes(1);
@@ -209,8 +243,13 @@ describe('HCCrawler', () => {
 
         test('crawls when the requested domain matches allowed domains by the regular expression', async () => {
           let requestskipped = 0;
-          this.crawler.on('requestskipped', () => { requestskipped += 1; });
-          await this.crawler.queue({ url: INDEX_PAGE, allowedDomains: [/\d+\.\d+\.\d+\.\d+/] });
+          this.crawler.on('requestskipped', () => {
+            requestskipped += 1;
+          });
+          await this.crawler.queue({
+            url: INDEX_PAGE,
+            allowedDomains: [/\d+\.\d+\.\d+\.\d+/],
+          });
           await this.crawler.onIdle();
           expect(requestskipped).toBe(0);
           expect(this.onSuccess).toHaveBeenCalledTimes(1);
@@ -218,8 +257,13 @@ describe('HCCrawler', () => {
 
         test('skips crawling when the requested domain does not match allowed domains', async () => {
           let requestskipped = 0;
-          this.crawler.on('requestskipped', () => { requestskipped += 1; });
-          await this.crawler.queue({ url: INDEX_PAGE, allowedDomains: ['0.0.0.0'] });
+          this.crawler.on('requestskipped', () => {
+            requestskipped += 1;
+          });
+          await this.crawler.queue({
+            url: INDEX_PAGE,
+            allowedDomains: ['0.0.0.0'],
+          });
           await this.crawler.onIdle();
           expect(requestskipped).toBe(1);
           expect(this.onSuccess).toHaveBeenCalledTimes(0);
@@ -227,8 +271,13 @@ describe('HCCrawler', () => {
 
         test('skips crawling when the requested domain exactly matches denied domains', async () => {
           let requestskipped = 0;
-          this.crawler.on('requestskipped', () => { requestskipped += 1; });
-          await this.crawler.queue({ url: INDEX_PAGE, deniedDomains: ['127.0.0.1'] });
+          this.crawler.on('requestskipped', () => {
+            requestskipped += 1;
+          });
+          await this.crawler.queue({
+            url: INDEX_PAGE,
+            deniedDomains: ['127.0.0.1'],
+          });
           await this.crawler.onIdle();
           expect(requestskipped).toBe(1);
           expect(this.onSuccess).toHaveBeenCalledTimes(0);
@@ -236,8 +285,13 @@ describe('HCCrawler', () => {
 
         test('skips crawling when the requested domain matches denied domains by the regular expression', async () => {
           let requestskipped = 0;
-          this.crawler.on('requestskipped', () => { requestskipped += 1; });
-          await this.crawler.queue({ url: INDEX_PAGE, deniedDomains: [/\d+\.\d+\.\d+\.\d+/] });
+          this.crawler.on('requestskipped', () => {
+            requestskipped += 1;
+          });
+          await this.crawler.queue({
+            url: INDEX_PAGE,
+            deniedDomains: [/\d+\.\d+\.\d+\.\d+/],
+          });
           await this.crawler.onIdle();
           expect(requestskipped).toBe(1);
           expect(this.onSuccess).toHaveBeenCalledTimes(0);
@@ -245,19 +299,31 @@ describe('HCCrawler', () => {
 
         test('follows links when the maxDepth option is set', async () => {
           let maxdepthreached = 0;
-          this.server.setContent('/1.html', `go to <a href="${PREFIX}/2.html">/2.html</a>`);
-          this.crawler.on('maxdepthreached', () => { maxdepthreached += 1; });
+          this.server.setContent(
+            '/1.html',
+            `go to <a href="${PREFIX}/2.html">/2.html</a>`,
+          );
+          this.crawler.on('maxdepthreached', () => {
+            maxdepthreached += 1;
+          });
           await this.crawler.queue({ url: `${PREFIX}/1.html`, maxDepth: 2 });
           await this.crawler.onIdle();
           expect(maxdepthreached).toBe(1);
           expect(this.onSuccess).toHaveBeenCalledTimes(2);
-          expect(this.onSuccess.mock.calls[0][0].links).toEqual([`${PREFIX}/2.html`]);
+          expect(this.onSuccess.mock.calls[0][0].links).toEqual([
+            `${PREFIX}/2.html`,
+          ]);
           expect(this.onSuccess.mock.calls[1][0].depth).toBe(2);
-          expect(this.onSuccess.mock.calls[1][0].previousUrl).toBe(`${PREFIX}/1.html`);
+          expect(this.onSuccess.mock.calls[1][0].previousUrl).toBe(
+            `${PREFIX}/1.html`,
+          );
         });
 
         test('crawls regardless of alert dialogs', async () => {
-          this.server.setContent('/', `<script>alert('Welcome to ${INDEX_PAGE}');</script>`);
+          this.server.setContent(
+            '/',
+            `<script>alert('Welcome to ${INDEX_PAGE}');</script>`,
+          );
           await this.crawler.queue(INDEX_PAGE);
           await this.crawler.onIdle();
           expect(this.onSuccess).toHaveBeenCalledTimes(1);
@@ -266,7 +332,9 @@ describe('HCCrawler', () => {
         test('crawls when the path is allowed by the robots.txt', async () => {
           this.server.setContent('/robots.txt', 'User-agent: *\nAllow: /');
           let requestdisallowed = 0;
-          this.crawler.on('requestdisallowed', () => { requestdisallowed += 1; });
+          this.crawler.on('requestdisallowed', () => {
+            requestdisallowed += 1;
+          });
           await this.crawler.queue(INDEX_PAGE);
           await this.crawler.onIdle();
           expect(requestdisallowed).toBe(0);
@@ -276,7 +344,9 @@ describe('HCCrawler', () => {
         test('skips crawling when the path is not allowed by the robots.txt', async () => {
           this.server.setContent('/robots.txt', 'User-agent: *\nDisallow: /');
           let requestdisallowed = 0;
-          this.crawler.on('requestdisallowed', () => { requestdisallowed += 1; });
+          this.crawler.on('requestdisallowed', () => {
+            requestdisallowed += 1;
+          });
           await this.crawler.queue(INDEX_PAGE);
           await this.crawler.onIdle();
           expect(requestdisallowed).toBe(1);
@@ -284,9 +354,14 @@ describe('HCCrawler', () => {
         });
 
         test('stops crawling when allowed and disallowed paths are mixed', async () => {
-          this.server.setContent('/robots.txt', 'User-agent: *\nDisallow: /2.html');
+          this.server.setContent(
+            '/robots.txt',
+            'User-agent: *\nDisallow: /2.html',
+          );
           let requestdisallowed = 0;
-          this.crawler.on('requestdisallowed', () => { requestdisallowed += 1; });
+          this.crawler.on('requestdisallowed', () => {
+            requestdisallowed += 1;
+          });
           await this.crawler.queue(`${PREFIX}/1.html`);
           await this.crawler.queue(`${PREFIX}/2.html`);
           await this.crawler.onIdle();
@@ -297,7 +372,9 @@ describe('HCCrawler', () => {
         test('does not obey the robots.txt with obeyRobotsTxt = false', async () => {
           this.server.setContent('/robots.txt', 'User-agent: *\nDisallow: /');
           let requestdisallowed = 0;
-          this.crawler.on('requestdisallowed', () => { requestdisallowed += 1; });
+          this.crawler.on('requestdisallowed', () => {
+            requestdisallowed += 1;
+          });
           await this.crawler.queue({ url: INDEX_PAGE, obeyRobotsTxt: false });
           await this.crawler.onIdle();
           expect(requestdisallowed).toBe(0);
@@ -306,13 +383,16 @@ describe('HCCrawler', () => {
 
         describe('when the content rendering is delayed', () => {
           beforeEach(() => {
-            this.server.setContent('/', `
+            this.server.setContent(
+              '/',
+              `
             <script>
             setTimeout(() => {
               window.document.write('<h1>Welcome to ${INDEX_PAGE}</h1>');
             }, 200);
             </script>
-            `);
+            `,
+            );
           });
 
           test('fails evaluating the delayed content without the waitFor option', async () => {
@@ -329,7 +409,9 @@ describe('HCCrawler', () => {
             });
             await this.crawler.onIdle();
             expect(this.onSuccess).toHaveBeenCalledTimes(1);
-            expect(this.onSuccess.mock.calls[0][0].result).toContain('Welcome to');
+            expect(this.onSuccess.mock.calls[0][0].result).toContain(
+              'Welcome to',
+            );
           });
 
           test('succeeds evaluating the delayed content with the waitFor selector option', async () => {
@@ -339,22 +421,25 @@ describe('HCCrawler', () => {
             });
             await this.crawler.onIdle();
             expect(this.onSuccess).toHaveBeenCalledTimes(1);
-            expect(this.onSuccess.mock.calls[0][0].result).toContain('Welcome to');
+            expect(this.onSuccess.mock.calls[0][0].result).toContain(
+              'Welcome to',
+            );
           });
 
           test('succeeds evaluating the delayed content with the waitFor function', async () => {
             await this.crawler.queue({
               url: INDEX_PAGE,
               waitFor: {
-                selectorOrFunctionOrTimeout: (expected => (
-                  window.document.body.innerText.includes(expected)
-                )),
+                // eslint-disable-next-line max-len
+                selectorOrFunctionOrTimeout: expected => window.document.body.innerText.includes(expected),
                 args: ['Welcome to'],
               },
             });
             await this.crawler.onIdle();
             expect(this.onSuccess).toHaveBeenCalledTimes(1);
-            expect(this.onSuccess.mock.calls[0][0].result).toContain('Welcome to');
+            expect(this.onSuccess.mock.calls[0][0].result).toContain(
+              'Welcome to',
+            );
           });
         });
 
@@ -369,9 +454,15 @@ describe('HCCrawler', () => {
             await this.crawler.onIdle();
             expect(this.onSuccess).toHaveBeenCalledTimes(1);
             expect(this.onSuccess.mock.calls[0][0].result).toBe('/3.html');
-            expect(this.onSuccess.mock.calls[0][0].redirectChain).toHaveLength(2);
-            expect(this.onSuccess.mock.calls[0][0].redirectChain[0].url).toBe(`${PREFIX}/1.html`);
-            expect(this.onSuccess.mock.calls[0][0].redirectChain[1].url).toBe(`${PREFIX}/2.html`);
+            expect(this.onSuccess.mock.calls[0][0].redirectChain).toHaveLength(
+              2,
+            );
+            expect(this.onSuccess.mock.calls[0][0].redirectChain[0].url).toBe(
+              `${PREFIX}/1.html`,
+            );
+            expect(this.onSuccess.mock.calls[0][0].redirectChain[1].url).toBe(
+              `${PREFIX}/2.html`,
+            );
           });
 
           test('requested already requested redirects', async () => {
@@ -384,10 +475,19 @@ describe('HCCrawler', () => {
           });
 
           test('skips already requested redirects with skipRequestedRedirect = true', async () => {
-            await this.crawler.queue({ url: `${PREFIX}/1.html`, skipRequestedRedirect: true });
+            await this.crawler.queue({
+              url: `${PREFIX}/1.html`,
+              skipRequestedRedirect: true,
+            });
             await this.crawler.onIdle();
-            await this.crawler.queue({ url: `${PREFIX}/2.html`, skipRequestedRedirect: true });
-            await this.crawler.queue({ url: `${PREFIX}/3.html`, skipRequestedRedirect: true });
+            await this.crawler.queue({
+              url: `${PREFIX}/2.html`,
+              skipRequestedRedirect: true,
+            });
+            await this.crawler.queue({
+              url: `${PREFIX}/3.html`,
+              skipRequestedRedirect: true,
+            });
             await this.crawler.onIdle();
             expect(this.onSuccess).toHaveBeenCalledTimes(1);
           });
@@ -395,7 +495,10 @@ describe('HCCrawler', () => {
 
         describe('when the page sets cookies', () => {
           beforeEach(async () => {
-            this.server.setContent('/', "<script>document.cookie = 'username=yujiosaka';</script>");
+            this.server.setContent(
+              '/',
+              "<script>document.cookie = 'username=yujiosaka';</script>",
+            );
           });
 
           test('resolves the cookies set in the page', async () => {
@@ -403,22 +506,40 @@ describe('HCCrawler', () => {
             await this.crawler.onIdle();
             expect(this.onSuccess).toHaveBeenCalledTimes(1);
             expect(this.onSuccess.mock.calls[0][0].cookies).toHaveLength(1);
-            expect(this.onSuccess.mock.calls[0][0].cookies[0].name).toBe('username');
-            expect(this.onSuccess.mock.calls[0][0].cookies[0].value).toBe('yujiosaka');
+            expect(this.onSuccess.mock.calls[0][0].cookies[0].name).toBe(
+              'username',
+            );
+            expect(this.onSuccess.mock.calls[0][0].cookies[0].value).toBe(
+              'yujiosaka',
+            );
           });
 
           test('resolves the cookies set both in the page by the crawler', async () => {
             await this.crawler.queue({
               url: INDEX_PAGE,
-              cookies: [{ name: 'sessionid', value: '4ec74265ba314bb0e47d4a615e9dd031', domain: '127.0.0.1' }],
+              cookies: [
+                {
+                  name: 'sessionid',
+                  value: '4ec74265ba314bb0e47d4a615e9dd031',
+                  domain: '127.0.0.1',
+                },
+              ],
             });
             await this.crawler.onIdle();
             expect(this.onSuccess).toHaveBeenCalledTimes(1);
             expect(this.onSuccess.mock.calls[0][0].cookies).toHaveLength(2);
-            expect(this.onSuccess.mock.calls[0][0].cookies[0].name).toBe('username');
-            expect(this.onSuccess.mock.calls[0][0].cookies[0].value).toBe('yujiosaka');
-            expect(this.onSuccess.mock.calls[0][0].cookies[1].name).toBe('sessionid');
-            expect(this.onSuccess.mock.calls[0][0].cookies[1].value).toBe('4ec74265ba314bb0e47d4a615e9dd031');
+            expect(this.onSuccess.mock.calls[0][0].cookies[0].name).toBe(
+              'username',
+            );
+            expect(this.onSuccess.mock.calls[0][0].cookies[0].value).toBe(
+              'yujiosaka',
+            );
+            expect(this.onSuccess.mock.calls[0][0].cookies[1].name).toBe(
+              'sessionid',
+            );
+            expect(this.onSuccess.mock.calls[0][0].cookies[1].value).toBe(
+              '4ec74265ba314bb0e47d4a615e9dd031',
+            );
           });
         });
 
@@ -432,7 +553,9 @@ describe('HCCrawler', () => {
             await this.crawler.queue(INDEX_PAGE);
             await this.crawler.onIdle();
             expect(this.onSuccess).toHaveBeenCalledTimes(1);
-            expect(this.onSuccess.mock.calls[0][0].result).toBe('HTTP Error 401 Unauthorized: Access is denied');
+            expect(this.onSuccess.mock.calls[0][0].result).toBe(
+              'HTTP Error 401 Unauthorized: Access is denied',
+            );
           });
 
           test('fails authentication when wrong username and password options are set', async () => {
@@ -443,7 +566,9 @@ describe('HCCrawler', () => {
             });
             await this.crawler.onIdle();
             expect(this.onSuccess).toHaveBeenCalledTimes(1);
-            expect(this.onSuccess.mock.calls[0][0].result).toBe('HTTP Error 401 Unauthorized: Access is denied');
+            expect(this.onSuccess.mock.calls[0][0].result).toBe(
+              'HTTP Error 401 Unauthorized: Access is denied',
+            );
           });
 
           test('passes authentication when proper username and password options are set', async () => {
@@ -454,21 +579,29 @@ describe('HCCrawler', () => {
             });
             await this.crawler.onIdle();
             expect(this.onSuccess).toHaveBeenCalledTimes(1);
-            expect(this.onSuccess.mock.calls[0][0].result).toBe('Authorization succeeded!');
+            expect(this.onSuccess.mock.calls[0][0].result).toBe(
+              'Authorization succeeded!',
+            );
           });
         });
 
         describe('when the sitemap.xml is referred by the robots.txt', () => {
           beforeEach(() => {
-            this.server.setContent('/robots.txt', `Sitemap: ${PREFIX}/sitemap.xml`);
-            this.server.setContent('/sitemap.xml', `
+            this.server.setContent(
+              '/robots.txt',
+              `Sitemap: ${PREFIX}/sitemap.xml`,
+            );
+            this.server.setContent(
+              '/sitemap.xml',
+              `
             <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
               <url>
                 <loc>${PREFIX}/2.html</loc>
                 <priority>1.0</priority>
               </url>
             </urlset>
-            `);
+            `,
+            );
           });
 
           test('does not follow the sitemap.xml', async () => {
@@ -478,7 +611,10 @@ describe('HCCrawler', () => {
           });
 
           test('follows the sitemap.xml with followSitemapXml = true', async () => {
-            await this.crawler.queue({ url: `${PREFIX}/1.html`, followSitemapXml: true });
+            await this.crawler.queue({
+              url: `${PREFIX}/1.html`,
+              followSitemapXml: true,
+            });
             await this.crawler.onIdle();
             expect(this.onSuccess).toHaveBeenCalledTimes(2);
           });
@@ -487,12 +623,20 @@ describe('HCCrawler', () => {
 
       describe('when the crawler is launched with the device option', () => {
         beforeEach(async () => {
-          this.server.setContent('/', '<script>window.document.write(window.navigator.userAgent);</script>');
-          this.crawler = await HCCrawler.launch(extend({
-            evaluatePage,
-            onSuccess: this.onSuccess,
-            device: 'iPhone 6',
-          }, DEFAULT_OPTIONS));
+          this.server.setContent(
+            '/',
+            '<script>window.document.write(window.navigator.userAgent);</script>',
+          );
+          this.crawler = await HCCrawler.launch(
+            extend(
+              {
+                evaluatePage,
+                onSuccess: this.onSuccess,
+                device: 'iPhone 6',
+              },
+              DEFAULT_OPTIONS,
+            ),
+          );
         });
 
         test('modifies the userAgent', async () => {
@@ -510,21 +654,31 @@ describe('HCCrawler', () => {
         });
 
         test("overrides the user agent with userAgent = 'headless-chrome-crawler'", async () => {
-          await this.crawler.queue({ url: INDEX_PAGE, userAgent: 'headless-chrome-crawler' });
+          await this.crawler.queue({
+            url: INDEX_PAGE,
+            userAgent: 'headless-chrome-crawler',
+          });
           await this.crawler.onIdle();
           expect(this.onSuccess).toHaveBeenCalledTimes(1);
-          expect(this.onSuccess.mock.calls[0][0].result).toBe('headless-chrome-crawler');
+          expect(this.onSuccess.mock.calls[0][0].result).toBe(
+            'headless-chrome-crawler',
+          );
         });
       });
 
       describe('when the crawler is launched with retryCount = 0', () => {
         beforeEach(async () => {
-          this.crawler = await HCCrawler.launch(extend({
-            evaluatePage,
-            onSuccess: this.onSuccess,
-            onError: this.onError,
-            retryCount: 0,
-          }, DEFAULT_OPTIONS));
+          this.crawler = await HCCrawler.launch(
+            extend(
+              {
+                evaluatePage,
+                onSuccess: this.onSuccess,
+                onError: this.onError,
+                retryCount: 0,
+              },
+              DEFAULT_OPTIONS,
+            ),
+          );
         });
 
         test('succeeds evaluating page', async () => {
@@ -541,22 +695,29 @@ describe('HCCrawler', () => {
           expect(this.onError.mock.calls[0][0].options.url).toBe(INDEX_PAGE);
           expect(this.onError.mock.calls[0][0].depth).toBe(1);
           expect(this.onError.mock.calls[0][0].previousUrl).toBe(null);
-          expect(this.onError.mock.calls[0][0].message).toContain('Evaluation failed:');
+          expect(this.onError.mock.calls[0][0].message).toContain(
+            'Evaluation failed:',
+          );
         });
 
         describe('when the page is protected by CSP meta tag', async () => {
           beforeEach(() => {
-            this.server.setContent('/csp.html', `
+            this.server.setContent(
+              '/csp.html',
+              `
             <meta http-equiv="Content-Security-Policy" content="default-src 'self'">
             <h1>Welcome to ${PREFIX}/csp.html</h1>
-            `);
+            `,
+            );
           });
 
           test('succeeds evaluating page', async () => {
             await this.crawler.queue(`${PREFIX}/csp.html`);
             await this.crawler.onIdle();
             expect(this.onSuccess).toHaveBeenCalledTimes(1);
-            expect(this.onSuccess.mock.calls[0][0].result).toContain('Welcome to');
+            expect(this.onSuccess.mock.calls[0][0].result).toContain(
+              'Welcome to',
+            );
           });
         });
 
@@ -603,13 +764,18 @@ describe('HCCrawler', () => {
             expect(this.onError.mock.calls[0][0].options.url).toBe(INDEX_PAGE);
             expect(this.onError.mock.calls[0][0].depth).toBe(1);
             expect(this.onError.mock.calls[0][0].previousUrl).toBe(null);
-            expect(this.onError.mock.calls[0][0].message).toContain('Navigation Timeout Exceeded:');
+            expect(this.onError.mock.calls[0][0].message).toContain(
+              'Navigation Timeout Exceeded:',
+            );
           });
         });
 
         describe('when an image is responded after the timeout option', () => {
           beforeEach(() => {
-            this.server.setContent('/', `<body><div style="background-image: url('${PREFIX}/empty.png');"></body>`);
+            this.server.setContent(
+              '/',
+              `<body><div style="background-image: url('${PREFIX}/empty.png');"></body>`,
+            );
             this.server.setContent('/empty.png', '');
             this.server.setResponseDelay('/empty.png', 400);
           });
@@ -621,49 +787,76 @@ describe('HCCrawler', () => {
             expect(this.onError.mock.calls[0][0].options.url).toBe(INDEX_PAGE);
             expect(this.onError.mock.calls[0][0].depth).toBe(1);
             expect(this.onError.mock.calls[0][0].previousUrl).toBe(null);
-            expect(this.onError.mock.calls[0][0].message).toContain('Navigation Timeout Exceeded:');
+            expect(this.onError.mock.calls[0][0].message).toContain(
+              'Navigation Timeout Exceeded:',
+            );
           });
 
           test("fails request with waitUntil = 'load'", async () => {
-            await this.crawler.queue({ url: INDEX_PAGE, timeout: 200, waitUntil: 'load' });
+            await this.crawler.queue({
+              url: INDEX_PAGE,
+              timeout: 200,
+              waitUntil: 'load',
+            });
             await this.crawler.onIdle();
             expect(this.onError).toHaveBeenCalledTimes(1);
             expect(this.onError.mock.calls[0][0].options.url).toBe(INDEX_PAGE);
             expect(this.onError.mock.calls[0][0].depth).toBe(1);
             expect(this.onError.mock.calls[0][0].previousUrl).toBe(null);
-            expect(this.onError.mock.calls[0][0].message).toContain('Navigation Timeout Exceeded:');
+            expect(this.onError.mock.calls[0][0].message).toContain(
+              'Navigation Timeout Exceeded:',
+            );
           });
 
           test("succeeds request with waitUntil = 'domcontentloaded'", async () => {
-            await this.crawler.queue({ url: INDEX_PAGE, timeout: 200, waitUntil: 'domcontentloaded' });
+            await this.crawler.queue({
+              url: INDEX_PAGE,
+              timeout: 200,
+              waitUntil: 'domcontentloaded',
+            });
             await this.crawler.onIdle();
             expect(this.onSuccess).toHaveBeenCalledTimes(1);
           });
 
           test("succeeds request with waitUntil = ['domcontentloaded']", async () => {
-            await this.crawler.queue({ url: INDEX_PAGE, timeout: 200, waitUntil: ['domcontentloaded'] });
+            await this.crawler.queue({
+              url: INDEX_PAGE,
+              timeout: 200,
+              waitUntil: ['domcontentloaded'],
+            });
             await this.crawler.onIdle();
             expect(this.onSuccess).toHaveBeenCalledTimes(1);
           });
 
           test("fails request with waitUntil = ['load', 'domcontentloaded']", async () => {
-            await this.crawler.queue({ url: INDEX_PAGE, timeout: 200, waitUntil: ['load', 'domcontentloaded'] });
+            await this.crawler.queue({
+              url: INDEX_PAGE,
+              timeout: 200,
+              waitUntil: ['load', 'domcontentloaded'],
+            });
             await this.crawler.onIdle();
             expect(this.onError).toHaveBeenCalledTimes(1);
             expect(this.onError.mock.calls[0][0].options.url).toBe(INDEX_PAGE);
             expect(this.onError.mock.calls[0][0].depth).toBe(1);
             expect(this.onError.mock.calls[0][0].previousUrl).toBe(null);
-            expect(this.onError.mock.calls[0][0].message).toContain('Navigation Timeout Exceeded:');
+            expect(this.onError.mock.calls[0][0].message).toContain(
+              'Navigation Timeout Exceeded:',
+            );
           });
         });
       });
 
       describe('when the crawler is launched with maxConcurrency = 1', () => {
         beforeEach(async () => {
-          this.crawler = await HCCrawler.launch(extend({
-            onSuccess: this.onSuccess,
-            maxConcurrency: 1,
-          }, DEFAULT_OPTIONS));
+          this.crawler = await HCCrawler.launch(
+            extend(
+              {
+                onSuccess: this.onSuccess,
+                maxConcurrency: 1,
+              },
+              DEFAULT_OPTIONS,
+            ),
+          );
         });
 
         test('does not throw an error when the delay option is set', async () => {
@@ -694,26 +887,39 @@ describe('HCCrawler', () => {
           ]);
           await this.crawler.onIdle();
           expect(this.onSuccess).toHaveBeenCalledTimes(2);
-          expect(this.onSuccess.mock.calls[0][0].options.url).toBe(`${PREFIX}/2.html`);
-          expect(this.onSuccess.mock.calls[1][0].options.url).toBe(`${PREFIX}/1.html`);
+          expect(this.onSuccess.mock.calls[0][0].options.url).toBe(
+            `${PREFIX}/2.html`,
+          );
+          expect(this.onSuccess.mock.calls[1][0].options.url).toBe(
+            `${PREFIX}/1.html`,
+          );
         });
 
         test('crawls duplicate urls with skipDuplicates = false', async () => {
           await this.crawler.queue({ url: `${PREFIX}/1.html` });
           await this.crawler.queue({ url: `${PREFIX}/2.html` });
           await this.crawler.queue({ url: `${PREFIX}/1.html` });
-          await this.crawler.queue({ url: `${PREFIX}/2.html`, skipDuplicates: false }); // The queue will be requested
+          await this.crawler.queue({
+            url: `${PREFIX}/2.html`,
+            skipDuplicates: false,
+          }); // The queue will be requested
           await this.crawler.onIdle();
           expect(this.onSuccess).toHaveBeenCalledTimes(3);
         });
 
         describe('when the first page contains several links', () => {
           beforeEach(() => {
-            this.server.setContent('/1.html', `
+            this.server.setContent(
+              '/1.html',
+              `
             go to <a href="${PREFIX}/2.html">/2.html</a>
             go to <a href="${PREFIX}/3.html">/3.html</a>
-            `);
-            this.server.setContent('/2.html', `go to <a href="${PREFIX}/4.html">/4.html</a>`);
+            `,
+            );
+            this.server.setContent(
+              '/2.html',
+              `go to <a href="${PREFIX}/4.html">/4.html</a>`,
+            );
           });
 
           test('follow links with depth first order (DFS) with maxDepth = 3', async () => {
@@ -723,37 +929,56 @@ describe('HCCrawler', () => {
             expect(this.onSuccess.mock.calls[0][0].depth).toBe(1);
             expect(this.onSuccess.mock.calls[0][0].previousUrl).toBe(null);
             expect(this.onSuccess.mock.calls[1][0].depth).toBe(2);
-            expect(this.onSuccess.mock.calls[1][0].previousUrl).toBe(`${PREFIX}/1.html`);
+            expect(this.onSuccess.mock.calls[1][0].previousUrl).toBe(
+              `${PREFIX}/1.html`,
+            );
             expect(this.onSuccess.mock.calls[2][0].depth).toBe(3);
-            expect(this.onSuccess.mock.calls[2][0].previousUrl).toBe(`${PREFIX}/2.html`);
+            expect(this.onSuccess.mock.calls[2][0].previousUrl).toBe(
+              `${PREFIX}/2.html`,
+            );
           });
 
           test('follow links with breadth first order (BFS) with maxDepth = 3 and depthPriority = false', async () => {
-            await this.crawler.queue({ url: `${PREFIX}/1.html`, maxDepth: 3, depthPriority: false });
+            await this.crawler.queue({
+              url: `${PREFIX}/1.html`,
+              maxDepth: 3,
+              depthPriority: false,
+            });
             await this.crawler.onIdle();
             expect(this.onSuccess).toHaveBeenCalledTimes(4);
             expect(this.onSuccess.mock.calls[0][0].depth).toBe(1);
             expect(this.onSuccess.mock.calls[0][0].previousUrl).toBe(null);
             expect(this.onSuccess.mock.calls[1][0].depth).toBe(2);
-            expect(this.onSuccess.mock.calls[1][0].previousUrl).toBe(`${PREFIX}/1.html`);
+            expect(this.onSuccess.mock.calls[1][0].previousUrl).toBe(
+              `${PREFIX}/1.html`,
+            );
             expect(this.onSuccess.mock.calls[2][0].depth).toBe(2);
-            expect(this.onSuccess.mock.calls[2][0].previousUrl).toBe(`${PREFIX}/1.html`);
+            expect(this.onSuccess.mock.calls[2][0].previousUrl).toBe(
+              `${PREFIX}/1.html`,
+            );
           });
         });
       });
 
       describe('when the crawler is launched with the maxRequest option', () => {
         beforeEach(async () => {
-          this.crawler = await HCCrawler.launch(extend({
-            onSuccess: this.onSuccess,
-            maxConcurrency: 1,
-            maxRequest: 2,
-          }, DEFAULT_OPTIONS));
+          this.crawler = await HCCrawler.launch(
+            extend(
+              {
+                onSuccess: this.onSuccess,
+                maxConcurrency: 1,
+                maxRequest: 2,
+              },
+              DEFAULT_OPTIONS,
+            ),
+          );
         });
 
         test('pauses at the maxRequest option', async () => {
           let maxrequestreached = 0;
-          this.crawler.on('maxrequestreached', () => { maxrequestreached += 1; });
+          this.crawler.on('maxrequestreached', () => {
+            maxrequestreached += 1;
+          });
           await this.crawler.queue(`${PREFIX}/1.html`);
           await this.crawler.queue(`${PREFIX}/2.html`);
           await this.crawler.queue(`${PREFIX}/3.html`);
@@ -791,15 +1016,22 @@ describe('HCCrawler', () => {
           }
 
           beforeEach(async () => {
-            this.crawler = await HCCrawler.launch(extend({
-              onSuccess: this.onSuccess,
-              preRequest,
-            }, DEFAULT_OPTIONS));
+            this.crawler = await HCCrawler.launch(
+              extend(
+                {
+                  onSuccess: this.onSuccess,
+                  preRequest,
+                },
+                DEFAULT_OPTIONS,
+              ),
+            );
           });
 
           test('does not skip crawling', async () => {
             let requestskipped = 0;
-            this.crawler.on('requestskipped', () => { requestskipped += 1; });
+            this.crawler.on('requestskipped', () => {
+              requestskipped += 1;
+            });
             await this.crawler.queue(INDEX_PAGE);
             await this.crawler.onIdle();
             expect(requestskipped).toBe(0);
@@ -813,15 +1045,22 @@ describe('HCCrawler', () => {
           }
 
           beforeEach(async () => {
-            this.crawler = await HCCrawler.launch(extend({
-              onSuccess: this.onSuccess,
-              preRequest,
-            }, DEFAULT_OPTIONS));
+            this.crawler = await HCCrawler.launch(
+              extend(
+                {
+                  onSuccess: this.onSuccess,
+                  preRequest,
+                },
+                DEFAULT_OPTIONS,
+              ),
+            );
           });
 
           test('skips crawling', async () => {
             let requestskipped = 0;
-            this.crawler.on('requestskipped', () => { requestskipped += 1; });
+            this.crawler.on('requestskipped', () => {
+              requestskipped += 1;
+            });
             await this.crawler.queue(INDEX_PAGE);
             await this.crawler.onIdle();
             expect(requestskipped).toBe(1);
@@ -836,17 +1075,24 @@ describe('HCCrawler', () => {
           }
 
           beforeEach(async () => {
-            this.crawler = await HCCrawler.launch(extend({
-              onSuccess: this.onSuccess,
-              preRequest,
-            }, DEFAULT_OPTIONS));
+            this.crawler = await HCCrawler.launch(
+              extend(
+                {
+                  onSuccess: this.onSuccess,
+                  preRequest,
+                },
+                DEFAULT_OPTIONS,
+              ),
+            );
           });
 
           test('modifies options', async () => {
             await this.crawler.queue(INDEX_PAGE);
             await this.crawler.onIdle();
             expect(this.onSuccess).toHaveBeenCalledTimes(1);
-            expect(this.onSuccess.mock.calls[0][0].options.screenshot.path).toBe(PNG_FILE);
+            expect(
+              this.onSuccess.mock.calls[0][0].options.screenshot.path,
+            ).toBe(PNG_FILE);
           });
         });
       });
@@ -860,10 +1106,15 @@ describe('HCCrawler', () => {
           }
 
           beforeEach(async () => {
-            this.crawler = await HCCrawler.launch(extend({
-              onSuccess: this.onSuccess,
-              customCrawl,
-            }, DEFAULT_OPTIONS));
+            this.crawler = await HCCrawler.launch(
+              extend(
+                {
+                  onSuccess: this.onSuccess,
+                  customCrawl,
+                },
+                DEFAULT_OPTIONS,
+              ),
+            );
           });
 
           test('resolves the page content', async () => {
@@ -880,16 +1131,16 @@ describe('HCCrawler', () => {
       describe('when the crawler is launched with the exporter option', () => {
         function removeTemporaryFile(file) {
           return new Promise(resolve => {
-            unlink(file, (() => void resolve()));
+            unlink(file, () => void resolve());
           });
         }
 
         function readTemporaryFile(file) {
           return new Promise((resolve, reject) => {
-            readFile(file, ENCODING, ((error, result) => {
+            readFile(file, ENCODING, (error, result) => {
               if (error) return reject(error);
               return resolve(result);
-            }));
+            });
           });
         }
 
@@ -902,12 +1153,17 @@ describe('HCCrawler', () => {
               file: CSV_FILE,
               fields: ['result'],
             });
-            this.crawler = await HCCrawler.launch(extend({
-              evaluatePage,
-              onSuccess: this.onSuccess,
-              exporter,
-              maxConcurrency: 1,
-            }, DEFAULT_OPTIONS));
+            this.crawler = await HCCrawler.launch(
+              extend(
+                {
+                  evaluatePage,
+                  onSuccess: this.onSuccess,
+                  exporter,
+                  maxConcurrency: 1,
+                },
+                DEFAULT_OPTIONS,
+              ),
+            );
           });
 
           test('exports a CSV file', async () => {
@@ -931,12 +1187,17 @@ describe('HCCrawler', () => {
               file: JSON_FILE,
               fields: ['result'],
             });
-            this.crawler = await HCCrawler.launch(extend({
-              evaluatePage,
-              onSuccess: this.onSuccess,
-              exporter,
-              maxConcurrency: 1,
-            }, DEFAULT_OPTIONS));
+            this.crawler = await HCCrawler.launch(
+              extend(
+                {
+                  evaluatePage,
+                  onSuccess: this.onSuccess,
+                  exporter,
+                  maxConcurrency: 1,
+                },
+                DEFAULT_OPTIONS,
+              ),
+            );
           });
 
           test('exports a json-line file', async () => {
@@ -956,15 +1217,25 @@ describe('HCCrawler', () => {
 
     describe('when the this.server is not running', () => {
       beforeEach(async () => {
-        this.crawler = await HCCrawler.launch(extend({ onError: this.onError }, DEFAULT_OPTIONS));
+        this.crawler = await HCCrawler.launch(
+          extend({ onError: this.onError }, DEFAULT_OPTIONS),
+        );
       });
 
       test('retries and gives up', async () => {
         let requestretried = 0;
         let requestfailed = 0;
-        this.crawler.on('requestretried', () => { requestretried += 1; });
-        this.crawler.on('requestfailed', () => { requestfailed += 1; });
-        await this.crawler.queue({ url: INDEX_PAGE, retryCount: 3, retryDelay: 100 });
+        this.crawler.on('requestretried', () => {
+          requestretried += 1;
+        });
+        this.crawler.on('requestfailed', () => {
+          requestfailed += 1;
+        });
+        await this.crawler.queue({
+          url: INDEX_PAGE,
+          retryCount: 3,
+          retryDelay: 100,
+        });
         await this.crawler.onIdle();
         expect(requestretried).toBe(3);
         expect(requestfailed).toBe(1);
@@ -974,7 +1245,9 @@ describe('HCCrawler', () => {
         expect(this.onError.mock.calls[0][0].options.url).toBe(INDEX_PAGE);
         expect(this.onError.mock.calls[0][0].depth).toBe(1);
         expect(this.onError.mock.calls[0][0].previousUrl).toBe(null);
-        expect(this.onError.mock.calls[0][0].message).toContain('net::ERR_CONNECTION_REFUSED');
+        expect(this.onError.mock.calls[0][0].message).toContain(
+          'net::ERR_CONNECTION_REFUSED',
+        );
       });
     });
   });
