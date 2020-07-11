@@ -49,12 +49,17 @@ const HCCrawler = require("headless-chrome-crawler");
 
 (async () => {
   const crawler = await HCCrawler.launch({
-    evaluatePage: () => ({
-      title: $("title").text()
-    }),
-    onSuccess: result => {
+    evaluatePage: [
+      {
+        function: (url) => {
+          return url + ": " + window.location.href;
+        },
+        functionArgs: ["url"],
+      },
+    ],
+    onSuccess: (result) => {
       console.log(result);
-    }
+    },
   });
   crawler.queue("https://example.com/");
   await crawler.onIdle();
@@ -233,10 +238,8 @@ url, allowedDomains, deniedDomains, timeout, priority, depthPriority, delay, ret
     - `httpOnly` <[boolean]>
     - `secure` <[boolean]>
     - `sameSite` <[string]> `"Strict"` or `"Lax"`.
-  - `evaluatePage()` <[Function]> Function to be evaluated in browsers. Return serializable object. If it's not serializable, the result will be `undefined`.
-  - `evaluatePageArgs()` <[Array]> Serializable args to pass to [Puppeteer's page.evaluate()](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pageevaluatepagefunction-args).
-  - `exposedFunctionName` <[string]> The name of the function exposed via [Puppeteer's page.exposeFunction()](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pageexposefunctionname-puppeteerfunction).
-  - `exposeFunction()` <[Function]> The method adds a function called `exposedFunctionName` on the page's window object. When called, the function executes in node.js and returns a Promise which resolves to the return value of the function.
+  - `evaluatePage()` <[Array]<[Object]>> Function to be evaluated in browsers. Return serializable object. If it's not serializable, the result will be `undefined`. Ex: `[{function: () => {}, functionArgs: []}]`.
+  - `exposeFunctions()` <[Array]<[Object]>> The method adds a function called `exposedFunctionName` on the page's window object. When called, the function executes in node.js and returns a Promise which resolves to the return value of the function. Ex: `[{function: () => {}, functionName: ""}]`.
 - returns: <[Promise]> Promise resolved when queue is pushed.
 
 > **Note**: `response.url` may be different from `options.url` especially when the requested url is redirected.
@@ -403,7 +406,7 @@ const cache = new RedisCache({ host: "127.0.0.1", port: 6379 });
 (async () => {
   const crawler = await HCCrawler.launch({
     persistCache: true, // Set true so that cache won't be cleared when closing the crawler
-    cache
+    cache,
   });
   // ...
 })();
@@ -431,7 +434,7 @@ const FILE = "./tmp/result.csv";
 const exporter = new CSVExporter({
   file: FILE,
   fields: ["response.url", "response.status", "links.length"],
-  separator: "\t"
+  separator: "\t",
 });
 
 (async () => {
@@ -455,7 +458,7 @@ const FILE = "./tmp/result.json";
 
 const exporter = new JSONLineExporter({
   file: FILE,
-  fields: ["options", "response"]
+  fields: ["options", "response"],
 });
 
 (async () => {

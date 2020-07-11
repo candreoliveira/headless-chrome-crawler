@@ -12,19 +12,19 @@ Crawlers based on simple requests to HTML files are generally fast. However, it 
 
 Powered by Headless Chrome, the crawler provides [simple APIs](#api-reference) to crawl these dynamic websites with the following features:
 
-* Distributed crawling
-* Configure concurrency, delay and retry
-* Support both [depth-first search](https://en.wikipedia.org/wiki/Depth-first_search) and [breadth-first search](https://en.wikipedia.org/wiki/Breadth-first_search) algorithm
-* Pluggable cache storages such as [Redis](https://redis.io)
-* Support [CSV](https://tools.ietf.org/html/rfc4180) and [JSON Lines](http://jsonlines.org) for exporting results
-* Pause at the max request and resume at any time
-* Insert [jQuery](https://jquery.com) automatically for scraping
-* Save screenshots for the crawling evidence
-* Emulate devices and user agents
-* Priority queue for crawling efficiency
-* Obey [robots.txt](https://developers.google.com/search/reference/robots_txt)
-* Follow [sitemap.xml](https://www.sitemaps.org/)
-* [Promise] support
+- Distributed crawling
+- Configure concurrency, delay and retry
+- Support both [depth-first search](https://en.wikipedia.org/wiki/Depth-first_search) and [breadth-first search](https://en.wikipedia.org/wiki/Breadth-first_search) algorithm
+- Pluggable cache storages such as [Redis](https://redis.io)
+- Support [CSV](https://tools.ietf.org/html/rfc4180) and [JSON Lines](http://jsonlines.org) for exporting results
+- Pause at the max request and resume at any time
+- Insert [jQuery](https://jquery.com) automatically for scraping
+- Save screenshots for the crawling evidence
+- Emulate devices and user agents
+- Priority queue for crawling efficiency
+- Obey [robots.txt](https://developers.google.com/search/reference/robots_txt)
+- Follow [sitemap.xml](https://www.sitemaps.org/)
+- [Promise] support
 
 ## Getting Started
 
@@ -40,31 +40,36 @@ yarn add headless-chrome-crawler
 ### Usage
 
 ```js
-const HCCrawler = require('headless-chrome-crawler');
+const HCCrawler = require("headless-chrome-crawler");
 
 (async () => {
   const crawler = await HCCrawler.launch({
     // Function to be evaluated in browsers
-    evaluatePage: (() => ({
-      title: $('title').text(),
-    })),
+    evaluatePage: [
+      {
+        function: (url) => {
+          return $("title").text() + "" + url;
+        },
+        functionArgs: ["url"],
+      },
+    ],
     // Function to be called with evaluated results from browsers
-    onSuccess: (result => {
+    onSuccess: (result) => {
       console.log(result);
-    }),
+    },
   });
   // Queue a request
-  await crawler.queue('https://example.com/');
+  await crawler.queue("https://example.com/");
   // Queue multiple requests
-  await crawler.queue(['https://example.net/', 'https://example.org/']);
+  await crawler.queue(["https://example.net/", "https://example.org/"]);
   // Queue a request with custom options
   await crawler.queue({
-    url: 'https://example.com/',
+    url: "https://example.com/",
     // Emulate a tablet device
-    device: 'Nexus 7',
+    device: "Nexus 7",
     // Enable screenshot by passing options
     screenshot: {
-      path: './tmp/example-com.png'
+      path: "./tmp/example-com.png",
     },
   });
   await crawler.onIdle(); // Resolved when no queue is left
@@ -74,11 +79,11 @@ const HCCrawler = require('headless-chrome-crawler');
 
 ## Examples
 
-* [Priority queue for crawling efficiency](https://github.com/yujiosaka/headless-chrome-crawler/blob/master/examples/priority-queue.js)
-* [Emulate device and user agent](https://github.com/yujiosaka/headless-chrome-crawler/blob/master/examples/emulate-device.js)
-* [Redis cache to skip duplicate requests](https://github.com/yujiosaka/headless-chrome-crawler/blob/master/examples/redis-cache.js)
-* [Export a CSV file for crawled results](https://github.com/yujiosaka/headless-chrome-crawler/blob/master/examples/csv-exporter.js)
-* [Conditionally saving screenshots](https://github.com/yujiosaka/headless-chrome-crawler/blob/master/examples/conditional-screenshot.js)
+- [Priority queue for crawling efficiency](https://github.com/yujiosaka/headless-chrome-crawler/blob/master/examples/priority-queue.js)
+- [Emulate device and user agent](https://github.com/yujiosaka/headless-chrome-crawler/blob/master/examples/emulate-device.js)
+- [Redis cache to skip duplicate requests](https://github.com/yujiosaka/headless-chrome-crawler/blob/master/examples/redis-cache.js)
+- [Export a CSV file for crawled results](https://github.com/yujiosaka/headless-chrome-crawler/blob/master/examples/csv-exporter.js)
+- [Conditionally saving screenshots](https://github.com/yujiosaka/headless-chrome-crawler/blob/master/examples/conditional-screenshot.js)
 
 See [here](https://github.com/yujiosaka/headless-chrome-crawler/tree/master/examples) for the full examples list. The examples can be run from the root folder as follows:
 
