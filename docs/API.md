@@ -111,6 +111,38 @@ const HCCrawler = require("headless-chrome-crawler");
       - `options` <[Object]> [crawler.queue()](#crawlerqueueoptions)'s options with default values.
       - `depth` <[number]> Depth of the followed links.
       - `previousUrl` <[string]> The previous request's url. The value is `null` for the initial request.
+  - `onSkip(result)` <[Function]> Function to be called when request is skipped.
+    - `result` <[Object]>
+      - `type` <[string]> Skip type.
+      - `redirectChain` <[Array]<[Object]>> Redirect chain of requests.
+        - `url` <[string]> Requested url.
+        - `headers` <[Object]> Request headers.
+      - `cookies` <[Array]<[Object]>> List of cookies.
+        - `name` <[string]>
+        - `value` <[string]>
+        - `domain` <[string]>
+        - `path` <[string]>
+        - `expires` <[number]> Unix time in seconds.
+        - `httpOnly` <[boolean]>
+        - `secure` <[boolean]>
+        - `session` <[boolean]>
+        - `sameSite` <[string]> `"Strict"` or `"Lax"`.
+      - `response` <[Object]>
+        - `ok` <[boolean]> whether the status code in the range 200-299 or not.
+        - `status` <[string]> status code of the request.
+        - `url` <[string]> Last requested url.
+        - `headers` <[Object]> Response headers.
+      - `options` <[Object]> [crawler.queue()](#crawlerqueueoptions)'s options with default values.
+      - `result` <[Serializable]> The result resolved from `evaluatePage()` option.
+      - `screenshot` <[Buffer]> Buffer with the screenshot image, which is `null` when `screenshot` option not passed.
+      - `links` <[Array]<[string]>> List of links found in the requested page.
+      - `depth` <[number]> Depth of the followed links.
+      - `previousUrl` <[string]> The previous request's url. The value is `null` for the initial request.
+  - `onDisallow(result)` <[Function]> Function to be called when request is skipped based on robots.
+    - `result` <[Object]>
+      - `options` <[Object]> [crawler.queue()](#crawlerqueueoptions)'s options with default values.
+      - `depth` <[number]> Depth of the followed links.
+      - `previousUrl` <[string]> The previous request's url. The value is `null` for the initial request.
 - returns: <[Promise]<[HCCrawler]>> Promise which resolves to HCCrawler instance.
 
 This method connects to an existing Chromium instance. The following options are passed to [puppeteer.connect()](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#puppeteerconnectoptions).
