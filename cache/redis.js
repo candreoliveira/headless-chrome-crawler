@@ -83,25 +83,44 @@ class RedisCache extends BaseCache {
         reject(error);
         return;
       }
-      // eslint-disable-next-line arrow-parens
-      this._client.set(key, json, (error) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        if (!this._settings.expire) {
-          resolve();
-          return;
-        }
+
+      if (this._settings.expire) {
+        const m = this._client.multi();
+
         // eslint-disable-next-line arrow-parens
-        this._client.expire(key, this._settings.expire, (_error) => {
-          if (_error) {
-            reject(_error);
+        m.set(key, json, (err) => {
+          if (err) {
+            reject(err);
+          }
+        });
+
+        // eslint-disable-next-line arrow-parens
+        m.expire(key, this._settings.expire, (err) => {
+          if (err) {
+            reject(err);
+          }
+        });
+
+        // eslint-disable-next-line arrow-parens
+        m.exec((err) => {
+          if (err) {
+            reject(err);
             return;
           }
+
           resolve();
         });
-      });
+      } else {
+        // eslint-disable-next-line arrow-parens
+        this._client.set(key, json, (err) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+
+          resolve();
+        });
+      }
     });
   }
 
